@@ -4,6 +4,21 @@
 
 **https://www.usenix.org/system/files/conference/atc12/atc12-final129.pdf**
 
+## Installation
+
+```bash
+# Clone the repository:
+$ git clone https://github.com/leinfinitr/dedup
+$ cd dedup
+# Generate Makefile:
+$ chmod a+x configure
+$ ./configure
+# Build the tools:
+$ make
+# Install the tools:
+$ make install
+```
+
 ## Introduction
 
 This file lists the steps to mutate the snapshots. Before starting the mutation, the following items must be available:

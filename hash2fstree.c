@@ -67,13 +67,13 @@ static void print_hashfile_header(struct hashfile_handle *handle)
 	printf("Chunks hashed: %" PRIu64 "\n", hashfile_numchunks(handle));
 	printf("Bytes hashed: %" PRIu64 "\n", hashfile_numbytes(handle));
 
-	ret = hashfile_chunking_method(handle, buf, MAXLINE);
+	ret = hashfile_chunking_method_str(handle, buf, MAXLINE);
 	if (ret < 0)
 		printf("Chunking method not recognized.\n");
 	else
 		printf("Chunking method: %s", buf);
 
-	ret = hashfile_hashing_method(handle, buf, MAXLINE);
+	ret = hashfile_hashing_method_str(handle, buf, MAXLINE);
 	if (ret < 0)
 		printf("Hashing method not recognized.\n");
 	else
