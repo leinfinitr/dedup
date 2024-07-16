@@ -1,8 +1,8 @@
 # File System Mutation
 
-**This project from the original authors of the paper "Generating Realistic Datasets for Deduplication Analysis" describes the steps to mutate the snapshots synthetically. The original paper can be found at the following link:**
+**This project is from the original authors of the paper "Generating Realistic Datasets for Deduplication Analysis" describing the steps to mutate the snapshots synthetically. The original paper can be found at the following link:**
 
-**https://www.usenix.org/system/files/conference/atc12/atc12-final129.pdf**
+**<https://www.usenix.org/system/files/conference/atc12/atc12-final129.pdf>**
 
 ## Installation
 
@@ -62,7 +62,7 @@ Mutation requires first preparatory stage of creating mutation profiles. This is
     The script is invoked as follows:
 
     ```bash
-    $ ./create_profile.sh /tmp/orig /tmp/profiles 7 8192 <some_suffix>
+    ./create_profile.sh /tmp/orig /tmp/profiles 7 8192 <some_suffix>
     ```
 
     where, 7 is the number of profiles to generate and 8192 is an average chunk size in bytes to use during mutation.
@@ -113,17 +113,13 @@ Mutation requires first preparatory stage of creating mutation profiles. This is
 
 4. At this point, SQL imports of all 8 synthetically generated snapshots are available. These 8 imports are ready for MySQL analysis as mentioned in the README in the dedupdb directory (`TOP_DIR/dedupdb/README`).
 
----
-
-**THE BELOW ACTIONS ARE NOT NEEDED RIGHT NOW**
-
----
+## THE BELOW ACTIONS ARE NOT NEEDED RIGHT NOW
 
 Actual creation of File System Tree out of populated Fstree object:
 
 1. For analyzing accuracy of synthetic data, this step is NOT required, but for collecting performance numbers, we need to actually create one filesystem tree on the disk (Essentially step 4 below).
 
-2.  This step actual creates the file system on disk and hashes of the created file system can be collected using "dedup" tool as done for original snapshots.  Once the hashes are available, SQL imports can be generated using "hfstat" tool.  These SQL imports are then loaded into MySQL database and analyzed as mentioned in TOP_DIR/dedupdb/README file.
+2. This step actual creates the file system on disk and hashes of the created file system can be collected using "dedup" tool as done for original snapshots.  Once the hashes are available, SQL imports can be generated using "hfstat" tool.  These SQL imports are then loaded into MySQL database and analyzed as mentioned in TOP_DIR/dedupdb/README file.
 
 3. Use the "fscreate" tool to create actual filesystems out of populated fstree objects:
 
@@ -138,7 +134,7 @@ Actual creation of File System Tree out of populated Fstree object:
     # ./fscreate -i /tmp/pfs/s2.pfs -o /tmp/s2_dir
     ```
 
-3. To collect the performance of the filesystem on the actual disk, use the "time" command after clearing the caches:
+4. To collect the performance of the filesystem on the actual disk, use the "time" command after clearing the caches:
 
     ```bash
     # sync
