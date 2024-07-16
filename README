@@ -1,0 +1,200 @@
+# File System Mutation
+
+This file lists the steps to mutate the snapshots.  Before starting
+the mutation, the following items must be available:
+
+1. Results of analysis of the original snapshots
+2. Hash file of the _first_ original snapshot (s0.hash)
+
+For the convenience of explanation, let us make the following
+assumptions:
+
+1. Total number of snapshots analyzed = 8
+2. Results of the original snapshots analysis are in directory /tmp/orig/
+3. Empty directory to save profiles is /tmp/profiles/
+4. Empty directory to save fstree objects is /tmp/pfs/
+5. Empty directory to save SQL imports of synthesized data: /tmp/imports/
+6. Empty directory to hold logs of mutation: /tmp/logs/
+7. Snapshots, corresponding profiles, fstree objects, and SQL imports
+  are named as (you don't need to rename any existing files, it will
+  happen automatically):
+   
+
+	|----------|----------|-----------------|--------|--------|-----------|
+	| Snapshot | Name of  | Profile         | Fstree | SQL    | Log File  |
+	|   Num    | Snapshot | Name            | Object | Import | Name      |
+	+----------+----------+-----------------+--------+--------+-----------+
+	|    1     |   s0     |  None           | s0.pfs | s0.imp | s0.log    |
+	+----------+----------+-----------------+--------+--------+-----------+
+	|    2     |   s1     |  s1.*.profile   | s1.pfs | s1.imp | s1.log    |
+	+----------+----------+-----------------+--------+--------+-----------+
+	|    3     |   s2     |  s2.*.profile   | s2.pfs | s2.imp | s2.log    |
+	+----------+----------+-----------------+--------+--------+-----------+
+	|    4     |   s3     |  s3.*.profile   | s3.pfs | s3.imp | s3.log    |
+	+----------+----------+-----------------+--------+--------+-----------+
+	|    5     |   s4     |  s4.*.profile   | s4.pfs | s4.imp | s4.log    |
+	+----------+----------+-----------------+--------+--------+-----------+
+	|    6     |   s5     |  s5.*.profile   | s5.pfs | s5.imp | s5.log    |
+	+----------+----------+-----------------+--------+--------+-----------+
+	|    7     |   s6     |  s6.*.profile   | s6.pfs | s6.imp | s6.log    |
+	+----------+----------+-----------------+--------+--------+-----------+
+	|    8     |   s7     |  s7.*.profile   | s7.pfs | s7.imp | s7.log    |
+	+----------+----------+-----------------+--------+--------+-----------+
+
+	Note: "*" in profile name is some suffix indicating dataset (explained
+		below).  s0 does not require any profile to get populated fstree
+		object.  Populated fstree object of initial snapshot s0 is
+		prepared using hash file and not via mutation.
+
+Mutation requires first preparatory stage of creating mutation profiles.
+This is quick step and requires item 1 listed above.
+
+Preparatory Stage: Creating Mutation Profiles
+---------------------------------------------
+1.  For generating 8 snapshots synthetically, we need 7 profiles to be created
+    from the results obtained from original analysis.  Remember that initial
+    populated fstree object can be prepared using "hash2fstree" binary as
+    explained later in this document.
+
+2.  A script can be used to generate all 7 profiles out of the
+    results obtained from original analysis:
+
+	Location: TOP_DIR/scripts/analysis/create_profile.sh
+
+    The script is invoked in the following way:
+
+	$ ./create_profile.sh /tmp/orig /tmp/profiles 7 8192 <some_suffix>
+
+    where, 7 is the number of profiles to generate and 8192 is an
+    average chunk size in bytes to use during mutation.
+    <some_suffix> is an arbitary string used to identify your set of profiles
+    if you happen to crate different kinds of profiles in the same
+    directory directory.  This argument is not critical in any way for
+    mutation. For example, it can be "kernel", "fredvar", etc.
+
+3.  In the /tmp/profiles directory, you should find profile files ready with
+    names of the form: (Here I used "fredp4" as <some_suffix>)
+
+	/tmp/profiles/s1.fredp4.profile
+	/tmp/profiles/s2.fredp4.profile
+	/tmp/profiles/s3.fredp4.profile
+	/tmp/profiles/s4.fredp4.profile
+	/tmp/profiles/s5.fredp4.profile
+	/tmp/profiles/s6.fredp4.profile
+	/tmp/profiles/s7.fredp4.profile
+
+Mutation Stage: Actual Populated Fstree Mutation
+------------------------------------------------
+1.  Create fstree object for the initial snapshot (s0) using a binary
+    called "hash2fstree".  It takes as an input a hash file and
+    converts it to an fstree:
+
+	# ./hash2fstree s0.hash
+
+    This creates a populated fstree object with the name "s0.hash.fst".
+    Copy it to populated fstree object directory with a proper name:
+
+	# cp ./s0.hash.fst /tmp/pfs/s0.pfs
+
+    Now, generate an SQL import for analyzing synthetically generated
+    datasets:
+
+	# ./fstree-print -i /tmp/pfs/s0.pfs -s > /tmp/imports/s0.imp
+
+2.  From this step onwards we start actual mutation.  Using profile for
+    snapshot 1 (s1), we  mutate populated fstree object of s0 to generate
+    populated fstree object for snapshot s1:
+
+	# time ./fstree-mutate -i /tmp/pfs/s0.pfs -p /tmp/profiles/s1.fredp4.profile \
+			  -o /tmp/pfs/s1.pfs > /tmp/logs/s1.log
+
+    /tmp/pfs/s1.pfs is the new populated fstree object representing snapshot 1 (s1).
+    We collect the log of each mutation stage and the time for
+    mutation. Notice, that time is not recorded in the log,
+    please, write it down for every mutation! (this allows us to
+    measure mutation performance).
+
+    We immediately generate its equivalent SQL import as:
+
+	# ./fstree-print -i /tmp/pfs/s1.pfs -s > /tmp/imports/s1.imp
+
+3.  We continue the mutation cycle then by repeating step 2 for number of
+    snapshots that we want to process:
+
+    Mutating from s1 to s2:
+	#  time ./fstree-mutate -i /tmp/pfs/s1.pfs -p /tmp/profiles/s2.fredp4.profile \
+			  -o /tmp/pfs/s2.pfs > /tmp/logs/s2.log
+	# ./fstree-print -i /tmp/pfs/s2.pfs -s > /tmp/imports/s2.imp
+
+    Mutating from s2 to s3:
+	#  time ./fstree-mutate -i /tmp/pfs/s2.pfs -p /tmp/profiles/s3.fredp4.profile \
+			  -o /tmp/pfs/s3.pfs > /tmp/logs/s3.log
+	# ./fstree-print -i /tmp/pfs/s3.pfs -s > /tmp/imports/s3.imp
+
+    Mutating from s3 to s4:
+	# time ./fstree-mutate -i /tmp/pfs/s3.pfs -p /tmp/profiles/s4.fredp4.profile \
+			  -o /tmp/pfs/s4.pfs > /tmp/logs/s4.log
+	# ./fstree-print -i /tmp/pfs/s4.pfs -s > /tmp/imports/s4.imp
+
+    Mutating from s4 to s5:
+	#  time ./fstree-mutate -i /tmp/pfs/s4.pfs -p /tmp/profiles/s5.fredp4.profile \
+			  -o /tmp/pfs/s5.pfs > /tmp/logs/s5.log
+	# ./fstree-print -i /tmp/pfs/s5.pfs -s > /tmp/imports/s5.imp
+
+    Mutating from s4 to s5:
+	# time ./fstree-mutate -i /tmp/pfs/s4.pfs -p /tmp/profiles/s5.fredp4.profile \
+			  -o /tmp/pfs/s5.pfs > /tmp/logs/s5.log
+	# ./fstree-print -i /tmp/pfs/s5.pfs -s > /tmp/imports/s5.imp
+
+    Mutating from s5 to s6:
+	# time ./fstree-mutate -i /tmp/pfs/s5.pfs -p /tmp/profiles/s6.fredp4.profile \
+			  -o /tmp/pfs/s6.pfs > /tmp/logs/s6.log
+	# ./fstree-print -i /tmp/pfs/s6.pfs -s > /tmp/imports/s6.imp
+
+    Mutating from s6 to s7:
+	# time ./fstree-mutate -i /tmp/pfs/s6.pfs -p /tmp/profiles/s7.fredp4.profile \
+			  -o /tmp/pfs/s7.pfs > /tmp/logs/s7.log
+	# ./fstree-print -i /tmp/pfs/s7.pfs -s > /tmp/imports/s7.imp
+
+4.  At this point SQL imports of all 8 synthetically generated snapshots is
+    available.  These 8 imports are ready for MySQL analysis as mentioned in
+    README in the dedupdb directory (TOP_DIR/dedupdb/README)
+
+
+***********************************************
+* THE BELOW ACTIONS ARE NOT NEEDED RIGHT NOW  *
+***********************************************
+
+Actual creation of File System Tree out of populated Fstree object:
+-------------------------------------------------------------------
+1.  For analyzing accuracy of synthetic data, this step is NOT required, but for
+    collecting performance numbers we need to actually create one file system
+    tree on the disk (Essentially step 4 below)
+
+2.  This step actual creates the file system on disk and hashes of the created
+    file system can be collected using "dedup" tool as done for original
+    snapshots.  Once the hashes are available, SQL imports can be generated
+    using "hfstat" tool.  These SQL imports are then loaded into MySQL database
+    and analyzed as mentioned in TOP_DIR/dedupdb/README file.
+
+3.  Thus, to create actual file systems out of populated fstree objects, use
+    "fscreate" tool as:
+
+	# ./fscreate -i /tmp/pfs/s0.pfs -o /tmp/s0_dir
+
+    Actual disk representation of file system tree corresponding to s0.pfs
+    fstree object will be created under root as /tmp/s0_dir.  Similarly,
+    we can create file systems corresponding to each of the snapshot:
+
+	# ./fscreate -i /tmp/pfs/s1.pfs -o /tmp/s1_dir
+	# ./fscreate -i /tmp/pfs/s2.pfs -o /tmp/s2_dir
+
+4.  To collect the performance of file system on actual disk, use "time"
+    command, but after clearing the caches:
+
+	# sync
+	# echo 3 > /proc/sys/vm/drop_caches
+	# time ./fscreate -i /tmp/pfs/s7.pfs -o /tmp/s7_dir
+	# time sync
+
+   Addition of last 2 "time" commands is reported in the table.

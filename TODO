@@ -1,0 +1,53 @@
+DEDUP TOOL:
+- After adding compression ratio, our CPU utilization is very high (up to 100%)
+  and we cannot scan some large FSL home directories in 24 hour window.
+  We should parallelize our code: producer-thread that reads data in and
+  chunking/compression threads as consumer-threads.
+- Verify types of all variables (counters, etc.), so that they are large enough
+  and consistent trought the whole program.
+- Chunking init methods currently set the header values for hash files.
+  It is ugly. Fix it somehow.
+- Add 'seed' parameter for a random chunking.
+- Add PRIME and M parameters for rabin chunking.
+- Probability not in double but as integer. Definitely need, otherwise format
+  mismatch.
+- It would be interesting to introduce an optional pre-scan phase
+  that scans all the files, counts the total amount of space occupied and
+  then during the main phase outputs current progress. Say:
+  N files out of M and XMB out of YMB scanned.
+- Add mechanisms to detect sparse files.  Take into account special
+  case of UNIX FS - NFS.
+- expression support for exclude option
+- add indexing back-end
+
+HFSTAT TOOL:
+- migrate to hashfilelib library
+- add formatted output option. Then we can encode current SQL and TXT outputs
+  as formats. E.g., we can use the syntax similar to blktrace:
+  F,"format" - for files
+  H,"format" - for hashes
+  etc.
+
+HASHCONCAT TOOL:
+- refactor, as it was written in "on the knee" manner
+
+FORMAT MODIFICATIONS:
+- Add markers (e.g., OxDEADEAD) to detect skews while reading the hashfile.
+  Or, may be checksums to ensure integrity as well?
+- Maybe use DataSeries as a format?
+
+FSTREE
+- bitarray-based search for slab allocator. It is faster (to allocate and
+  deallocate) and also eliminates ugly designation of empty slots by setting
+  first N bytes of a slice to 0.
+- liblog in fsscan and others
+- add chunk slab check to checker
+- we do not decrease in_use in slabs
+- do not update files in-place (generator and updator)
+- naming convention and interaction rethink
+
+FSMUTATE
+- We need to support private field (as in paper)
+- We need to support XML Profiles (as in paper)
+- Entropy - fsmutate, dedup, populate (as in paper)
+- "Modules with defined APIs" - we need to make API more explicit.
